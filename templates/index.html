@@ -8,6 +8,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.js"></script>
     <style>
+        .jconfirm-holder {
+            width: 50%;
+            margin-left: 25%;
+        }
+
         body, html {
             height: 100%;
             margin: 0;
@@ -45,6 +50,7 @@
             width: 400px;
             flex: 1; /* 占右侧较小部分空间 */
             display: flex;
+            flex-direction: column;
             align-items: center; /* 垂直居中 */
             justify-content: center; /* 水平居中 */
             padding: 10px;
@@ -108,6 +114,22 @@
             overflow: hidden;
         }
 
+        .suggestions {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            text-align: left;
+            font-size: 18px;
+        }
+
+        .suggestions h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -122,11 +144,13 @@
                 </div>
             </div>
             <div class="real-time-data">
-
                 <div id="data"></div>
+                <div class="suggestions">
+                    <h2>健康建议：</h2>
+                    <p id="suggestion-text">保持良好的坐姿，避免久坐，每小时起来活动一下。注意腰椎和背部的放松，避免长期的压力积累。</p>
+                </div>
             </div>
         </div>
-        <!-- 如果需要更多布局，可以在此处添加 -->
     </div>
 
     <script>
@@ -138,17 +162,13 @@
         }
 
         const initialData = {
-            '左右倾斜角度': 13.36,
-            '前后倾斜角度': 136.6,
-            '腰椎受力程度': 0.31,
-            '腰椎平均受力时间': 39383.13,
-            '左倾受力程度': 0.08,
-            '右倾受力程度': 0.10
+            '左右倾斜角度': 0,
+            '前后倾斜角度': 0,
+            '腰椎受力程度': 0,
+            '腰椎平均受力时间': 0,
+            '左倾受力程度': 0,
+            '右倾受力程度': 0
         };
-
-
-
-
 
         let base = new Date(2023, 4, 17, 8, 0).getTime(); // Initial date and time
         let oneMinute = 10 * 5 * 100; // 10 minutes interval
@@ -248,9 +268,6 @@
 
         myChart.setOption(option);
 
-
-
-
         function updateTable(data) {
             // 清空现有的表格内容
             $('#data').empty();
@@ -266,11 +283,31 @@
             headerRow.append('<th>值</th>');
             thead.append(headerRow);
 
+            // 设置阈值
+            const thresholds = {
+                '左右倾斜角度': 500,
+                '前后倾斜角度': 500,
+                '腰椎受力程度': 5000,
+                '腰椎平均受力时间': 60,
+                '左倾受力程度': 1000,
+                '右倾受力程度': 1000,
+                '是否久坐': 0
+            };
+
             // 创建表身
             $.each(data, function(key, value) {
                 let row = $('<tr></tr>');
                 row.append(`<td>${key}</td>`);
-                row.append(`<td>${value}</td>`);
+
+                // 判断值是否超过阈值
+                if (thresholds[key] !== undefined && value > thresholds[key]) {
+                    row.append(`<td style="color: red;">${value}</td>`);
+                } else if(key == '左右倾斜角度' && value < 0){
+                    row.append(`<td style="color: red;">${value}</td>`);
+                } else {
+                    row.append(`<td>${value}</td>`);
+                }
+
                 tbody.append(row);
             });
 
@@ -284,100 +321,89 @@
         // 初始调用，显示初始数据
         updateTable(initialData);
 
+        let lastAlertTime = 0;
+        let latestData = null;
 
-        x = 0;
-        y = 0;
-        n = 0;
-        m = 0;
-        // 每5秒刷新一次数据
+        // 每2秒刷新一次数据
         setInterval(function() {
             $.getJSON('/get_latest_data', function(sourcedata) {
-                //更新表格
+                // 更新表格
                 updateTable(sourcedata);
 
-                // 判断压力情况，弹出弹窗
+                // 更新最新数据
+                latestData = sourcedata;
 
-                    if(sourcedata['是否久坐']==1 && x==0){//久坐
-                        // $.alert({
-                        //     title: '久坐啦!',
-                        //     content: "现在是"+getTime()+"，你坐太久啦，起来活动活动吧",
-                        //     width:'50%'
-                        //
-                        // });
-                        alert("现在是"+getTime()+"，你坐太久啦，起来活动活动吧");
-                        x+=1
-                    }
-                    if(sourcedata['是否久坐']==2 && y==0){//前倾
-                        // $.alert({
-                        //     title: '前倾啦!',
-                        //     content: "现在是"+getTime()+"，你前倾啦，调整下坐姿坐坐正吧",
-                        //     width:'50%'
-                        // });
-                        alert("现在是"+getTime()+"，你前倾啦，调整下坐姿坐坐正吧");
-                        y+=1
-                    }else if(sourcedata['是否久坐']==3  && n==0){//左倾
-                        // $.alert({
-                        //     title: '左倾啦!',
-                        //     content: "现在是"+getTime()+"，你左倾啦，调整下坐姿坐坐正吧",
-                        //     width:'50%'
-                        // });
-                        alert("现在是"+getTime()+"，你左倾啦，调整下坐姿坐坐正吧");
-                        n+=1
-                    }else if(sourcedata['是否久坐']==4 && m==0){//右倾
-                        // $.alert({
-                        //     title: '右倾啦!',
-                        //     content: "现在是"+getTime()+"，你右倾啦，调整下坐姿坐坐正吧",
-                        //     width:'50%'
-                        // });
-                        alert("现在是"+getTime()+"，你右倾啦，调整下坐姿坐坐正吧");
-                        m+=1
-                    }
-
-
-
-
-
-                console.log(sourcedata['是否久坐'])
-                //更新折线图
-                // Function to simulate fetching new data
+                // 更新折线图
                 function fetchData() {
-                  const now = new Date().getTime();
-                  // const newPressureValue = sourcedata['腰椎受力程度']; // 获取压力程度数据
-                    const newPressureValue = (Math.random() * 20 + 2500).toFixed(2);
+                    const now = new Date().getTime();
+                    const newPressureValue = latestData['腰椎受力程度'];
                     console.log(sourcedata['腰椎受力程度']);
-                  // Update data
-                  data.push([now, newPressureValue]);
+                    // 更新数据
+                    data.push([now, newPressureValue]);
 
-                  // Keep only the last 24 hours of data
-                  const oneDay = 24 * 60 * 60 * 1000;
-                  data = data.filter(point => point[0] >= now - oneDay);
+                    // 仅保留最近24小时的数据
+                    const oneDay = 24 * 60 * 60 * 1000;
+                    data = data.filter(point => point[0] >= now - oneDay);
 
-                  // Update the chart
-                  myChart.setOption({
-                    series: [{
-                      data: data
-                    }]
-                  });
+                    // 更新图表
+                    myChart.setOption({
+                        series: [{
+                            data: data
+                        }]
+                    });
                 }
-                fetchData()
-
-
-
+                fetchData();
+                updateSuggestion(latestData['是否久坐']);
             }).fail(function() {
                 console.error('Error fetching data');
             });
         }, 2000);
-setInterval(function() {
-    alert("现在是"+getTime()+"，你坐太久啦，起来活动活动吧");
-}, 8000);
-setInterval(function() {
-    alert("现在是"+getTime()+"，你右倾啦，调整下坐姿坐坐正吧");
-}, 14000);
 
+        let crr = 0;
 
+        // 更新健康建议的函数
+        function updateSuggestion(posture) {
+            const suggestions = {
+                0: "保持良好的坐姿，避免久坐，每小时起来活动一下。注意腰椎和背部的放松，避免长期的压力积累。",
+                1: "你坐太久啦，起来活动活动吧。每坐一小时站起来活动5分钟，有助于缓解腰椎压力。",
+                2: "你前倾啦，调整下坐姿坐坐正吧。保持背部挺直，眼睛与电脑屏幕平行。",
+                3: "你左倾啦，调整下坐姿坐坐正吧。保持背部挺直，避免长时间偏向一侧。",
+                4: "你右倾啦，调整下坐姿坐坐正吧。保持背部挺直，避免长时间偏向一侧。"
+            };
 
+            $('#suggestion-text').text(suggestions[posture]);
+        }
+
+        // 独立的弹窗逻辑函数
+        function handleAlert() {
+            if (latestData) {
+                const currentTime = new Date().getTime();
+                if (currentTime - lastAlertTime >= 10000 || latestData['是否久坐'] != crr) { // 检查是否已经过了15秒
+                    if (latestData['是否久坐'] == 1) { // 久坐
+                        $.alert("现在是" + getTime() + "，你坐太久啦，起来活动活动吧");
+                        lastAlertTime = currentTime; // 更新上次弹窗的时间
+                    } else if (latestData['是否久坐'] == 2) { // 前倾
+                        $.alert("现在是" + getTime() + "，你前倾啦，调整下坐姿坐坐正吧");
+                        lastAlertTime = currentTime; // 更新上次弹窗的时间
+                    } else if (latestData['是否久坐'] == 3) { // 左倾
+                        $.alert("现在是" + getTime() + "，你左倾啦，调整下坐姿坐坐正吧");
+                        lastAlertTime = currentTime; // 更新上次弹窗的时间
+                    } else if (latestData['是否久坐'] == 4) { // 右倾
+                        $.alert("现在是" + getTime() + "，你右倾啦，调整下坐姿坐坐正吧");
+                        lastAlertTime = currentTime; // 更新上次弹窗的时间
+                    }
+                    crr  = latestData['是否久坐'];
+                }
+            }
+        }
+
+        // 每秒钟检查一次是否需要弹窗
+        setInterval(handleAlert, 1000);
     </script>
 </body>
 </html>
+
+
+
 
 
