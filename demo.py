@@ -49,9 +49,9 @@ def get_latest_data():
     thread.start()
     # 收到的字符串
 
-    # data = "Roll=13.36 Yall=136.6 Weight_Shiwu=0.31 g Weight_Shiwu2=39383.13 g Weight_Shiwu3=0.08 g Weight_Shiwu4=0.10 g warning=2"
+    data = "Roll=13.36 Yall=136.6 Weight_Shiwu=0.31 g Weight_Shiwu2=39383.13 g Weight_Shiwu3=0.08 g Weight_Shiwu4=0.10 g warning=2"
 
-    data = latest_data
+    # data = latest_data
     print("收到的数据：" + data)
     # 拆分字符串成键值对
     items = data.split()

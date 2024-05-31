@@ -114,6 +114,10 @@
             overflow: hidden;
         }
 
+        .suggestions h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
         .suggestions {
             margin-top: 20px;
             padding: 10px;
@@ -124,12 +128,27 @@
             width: 100%;
             text-align: left;
             font-size: 18px;
+            {#background-image: url('https://th.bing.com/th/id/R.d991c0da42e54ea5286604cfde3df48b?rik=pEfKXw6hxfD4nQ&riu=http%3a%2f%2fn.sinaimg.cn%2fsinakd20220524s%2f149%2fw900h849%2f20220524%2fcdcc-eedd5cadaa9382f78363ac48bc09ab5c.jpg&ehk=ZRNSzVz7p15NhO4je%2bqhhjCBEXdblcAnJQSCk66eN2M%3d&risl=&pid=ImgRaw&r=0'); /* 绿灯 */#}
+            background-repeat: no-repeat;
+            background-position: right top;
+            background-size: 200px 200px; /* 调整背景图片大小 */
         }
 
-        .suggestions h2 {
-            font-size: 24px;
-            margin-bottom: 10px;
+
+
+        .red-light {
+            background-image: url('https://th.bing.com/th/id/OIP.fIQSYQeJsoaCcbMzu9B36gHaG5?rs=1&pid=ImgDetMain'); /* 红灯 */
+            background-size: 200px 200px; /* 调整背景图片大小 */
+            opacity:0.4;
         }
+
+        .green-light {
+            background-image: url('https://th.bing.com/th/id/R.d991c0da42e54ea5286604cfde3df48b?rik=pEfKXw6hxfD4nQ&riu=http%3a%2f%2fn.sinaimg.cn%2fsinakd20220524s%2f149%2fw900h849%2f20220524%2fcdcc-eedd5cadaa9382f78363ac48bc09ab5c.jpg&ehk=ZRNSzVz7p15NhO4je%2bqhhjCBEXdblcAnJQSCk66eN2M%3d&risl=&pid=ImgRaw&r=0'); /* 绿灯 */
+            background-size: 200px 200px; /* 调整背景图片大小 */
+            opacity:0.4;
+        }
+
+
     </style>
 </head>
 <body>
@@ -285,8 +304,8 @@
 
             // 设置阈值
             const thresholds = {
-                '左右倾斜角度': 500,
-                '前后倾斜角度': 500,
+                {#'左右倾斜角度': 350,#}
+                '前后倾斜角度': 700,
                 '腰椎受力程度': 5000,
                 '腰椎平均受力时间': 60,
                 '左倾受力程度': 1000,
@@ -302,8 +321,8 @@
                 // 判断值是否超过阈值
                 if (thresholds[key] !== undefined && value > thresholds[key]) {
                     row.append(`<td style="color: red;">${value}</td>`);
-                } else if(key == '左右倾斜角度' && value < 0){
-                    row.append(`<td style="color: red;">${value}</td>`);
+                } else if(key == '左右倾斜角度' && (value < 100 || value >350)){
+                    row.append(`<td style="color: red;">${value}</td>`);//待修改，角度显示还需要换算下
                 } else {
                     row.append(`<td>${value}</td>`);
                 }
@@ -317,6 +336,29 @@
             // 将表格添加到div#data
             $('#data').append(table);
         }
+
+        // 更新健康建议的函数
+        function updateSuggestion(posture) {
+            const suggestions = {
+                0: "保持良好的坐姿，避免久坐，每小时起来活动一下。注意腰椎和背部的放松，避免长期的压力积累。",
+                1: "你坐太久啦，起来活动活动吧。每坐一小时站起来活动5分钟，有助于缓解腰椎压力。",
+                2: "你前倾啦，调整下坐姿坐坐正吧。保持背部挺直，眼睛与电脑屏幕平行。",
+                3: "你左倾啦，调整下坐姿坐坐正吧。保持背部挺直，避免长时间偏向一侧。",
+                4: "你右倾啦，调整下坐姿坐坐正吧。保持背部挺直，避免长时间偏向一侧。"
+            };
+
+            const suggestionBox = $('#suggest');
+            suggestionBox.removeClass('red-light green-light'); // Remove any existing light classes
+
+            if (posture === 0) {
+                suggestionBox.addClass('green-light'); // Add green light class for normal posture
+            } else if (posture >= 1 && posture <= 4) {
+                suggestionBox.addClass('red-light'); // Add red light class for abnormal postures
+            }
+
+            suggestionBox.text(suggestions[posture]); // Set suggestion text based on posture
+        }
+
 
         // 初始调用，显示初始数据
         updateTable(initialData);
@@ -361,18 +403,7 @@
 
         let crr = 0;
 
-        // 更新健康建议的函数
-        function updateSuggestion(posture) {
-            const suggestions = {
-                0: "保持良好的坐姿，避免久坐，每小时起来活动一下。注意腰椎和背部的放松，避免长期的压力积累。",
-                1: "你坐太久啦，起来活动活动吧。每坐一小时站起来活动5分钟，有助于缓解腰椎压力。",
-                2: "你前倾啦，调整下坐姿坐坐正吧。保持背部挺直，眼睛与电脑屏幕平行。",
-                3: "你左倾啦，调整下坐姿坐坐正吧。保持背部挺直，避免长时间偏向一侧。",
-                4: "你右倾啦，调整下坐姿坐坐正吧。保持背部挺直，避免长时间偏向一侧。"
-            };
 
-            $('#suggestion-text').text(suggestions[posture]);
-        }
 
         // 独立的弹窗逻辑函数
         function handleAlert() {
