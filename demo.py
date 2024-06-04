@@ -17,14 +17,16 @@ def get_data():
     ADDR = (HOST, PORT)
 
     while True:
+        print("请求数据请求数据")
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcpCliSock:
                 tcpCliSock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
                 tcpCliSock.connect(ADDR)
                 data = tcpCliSock.recv(2000)
+
                 if data:  # 确保接收到了数据
                     latest_data = data.decode('utf-8')  # 解码为字符串
-                    # print(latest_data)
+                    print(latest_data)
                 else:
                     print("No data received")
             print(latest_data)  # 打印最新的数据
@@ -41,10 +43,13 @@ def index():
 
 @app.route('/get_latest_data')
 def get_latest_data():
-
+    # 创建一个线程来运行get_data函数
+    thread = threading.Thread(target=get_data)
+    thread.daemon = True
+    thread.start()
     # 收到的字符串
 
-    data = "Roll=13.36 Yall=136.6 Weight_Shiwu=0.31 g Weight_Shiwu2=39383.13 g Weight_Shiwu3=0.08 g Weight_Shiwu4=0.10 g warning=0"
+    data = "Roll=13.36 Yall=136.6 Weight_Shiwu=0.31 g Weight_Shiwu2=39383.13 g Weight_Shiwu3=0.08 g Weight_Shiwu4=0.10 g warning=2"
 
     # data = latest_data
     print("收到的数据：" + data)
@@ -61,7 +66,6 @@ def get_latest_data():
             # print(key)
             # print(value)
             variables[key] = value
-    print("收到的数据："+data)
 
     # 将字典中的值赋给相应的变量名
     Roll = float(variables['Roll'])
@@ -80,10 +84,7 @@ def get_latest_data():
 
 
 if __name__ == '__main__':
-    # 创建一个线程来运行get_data函数
-    thread = threading.Thread(target=get_data)
-    thread.daemon = True
-    thread.start()
+
 
     # 启动Flask应用
     app.run(host='0.0.0.0', port=5000, debug=True)
